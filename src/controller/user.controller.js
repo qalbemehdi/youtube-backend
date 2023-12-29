@@ -3,6 +3,7 @@ import ApiError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadOnCloudinary from "../utils/cloudinary.util.js";
+import { generateAccessAndRefreshToken } from "../utils/generateAccessAndRefreshToken.js";
 import { registerValidation, userExist } from "../utils/validation.js";
 
 export const registerUser = asyncHandler(async (req, res) => {
@@ -53,3 +54,63 @@ export const registerUser = asyncHandler(async (req, res) => {
    return  ApiResponse.send(res,200,createdUser,"successfully registered");
 
 });
+
+export const loginUser=asyncHandler(async(req,res)=>{
+
+  const { username, email, password } = req.body;
+
+  if(!username&&!email)
+    throw new ApiError(400,"username or email is required");
+   
+   const user=await User.findOne({
+    $or:[{username},{email}]
+   })
+  
+   if(!user)
+   throw new ApiError(400,"user does not exist!!!");
+    
+   if(!(await user.isPasswordCorrect(password)))
+     throw new ApiError(400,"password is not correct!")
+
+     //generating access and refresh token ,and updating user document in database
+      const{accessToken,refreshToken}= await generateAccessAndRefreshToken(user);
+      //assignment;
+
+
+      const options={
+        httpOnly:true,
+        secure:true
+      }
+
+      return res.status(200)
+      .cookie('accessToken',accessToken,options)
+      .cookie('refreshToken',refreshToken,options)
+      .json({
+        data:{accessToken,refreshToken},
+        message:"user logged in successfully"
+      })
+});
+
+export const logoutUser=asyncHandler(async(req,res)=>{
+ 
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user._id,
+    { $unset: { refreshToken: 1 } },
+    { new: true }
+  );
+// const user=await User.findById(req.user._id);
+// user.refreshToken=undefined;
+// user.save({validateBeforeSave:false})
+// console.log(user);
+
+   
+    const options={
+      httpOnly:true,
+      secure:true
+    }
+    return res.status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json({message:"user logged out"})
+})
+ 
