@@ -35,7 +35,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   const avatarRes = await uploadOnCloudinary(avatarLocalPath);
   const coverImageRes =coverImagaLocalPath? await uploadOnCloudinary(coverImagaLocalPath):"";
-  if (!avatarRes) throw new ApiError(400, "Avatar file is required");
+  if (!avatarRes) throw new ApiError(500, "Error while uploading avatar on server");
 //Create user----------------------->
   const user = await User.create({
     fullname,
