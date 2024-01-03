@@ -129,6 +129,21 @@ export const changeCurrentPassword=asyncHandler(async(req,res)=>{
  //validation of your new password should be done on frontend side
  user.password=newPassword;
  await user.save({validateBeforeSave:false})
-  console.log(newPassword);
  return  ApiResponse.send(res,200,"","Password changed successfully") 
+})
+
+export const updateAccountDetails=asyncHandler(async(req,res)=>{
+  const {fullname,email}=req.body;
+  if(!fullname||!email)
+  throw new ApiError(400,"all fields are required");
+
+  const user=await User.findByIdAndUpdate(req.user._id,{
+    fullname,
+    email,
+  },{new:true}).select("-password -refreshToken");
+
+  if(!user)
+  throw new ApiError(400,"user is not logged in");
+
+  return  ApiResponse.send(res,200,user,"Account details updated successfully") 
 })
