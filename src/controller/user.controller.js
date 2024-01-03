@@ -114,3 +114,21 @@ export const logoutUser=asyncHandler(async(req,res)=>{
     .json({message:"user logged out"})
 })
  
+export const changeCurrentPassword=asyncHandler(async(req,res)=>{
+  const {currentPassword,newPassword}=req.body;
+  if(!currentPassword||!newPassword)
+    throw new ApiError(400,"all fields are required");
+  const user=await User.findById(req.user._id);
+  if(!user)//since this is an extra check,if removed nothing will impact to the functionality because we already checked the case in verfyJwt.
+  throw new ApiError(400,"user is not logged in");
+
+  const isPasswordCorrect=await user.isPasswordCorrect(currentPassword);
+  if(!isPasswordCorrect)
+  throw new ApiError(400,"Invalid old password");
+  
+ //validation of your new password should be done on frontend side
+ user.password=newPassword;
+ await user.save({validateBeforeSave:false})
+  console.log(newPassword);
+ return  ApiResponse.send(res,200,"","Password changed successfully") 
+})
