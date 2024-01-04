@@ -26,4 +26,15 @@ cloudinary.config({
         
     }
   }
+  export const deleteOnCloudinary=async(publicId)=>{
+    try {
+      const res= await cloudinary.uploader.destroy(publicId);
+      if(!res)
+       console.log("Issue in destroying the file");
+    return res;
+    } catch (error) {
+        console.log("Error while deleting files on cloudinary");
+    }
+        
+  }
   export default uploadOnCloudinary;

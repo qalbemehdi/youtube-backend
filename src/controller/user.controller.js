@@ -2,7 +2,7 @@ import { User } from "../models/user.model.js";
 import ApiError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import uploadOnCloudinary from "../utils/cloudinary.util.js";
+import uploadOnCloudinary, { deleteOnCloudinary } from "../utils/cloudinary.util.js";
 import { generateAccessAndRefreshToken } from "../utils/generateAccessAndRefreshToken.js";
 import { registerValidation, userExist } from "../utils/validation.js";
 
@@ -147,3 +147,55 @@ export const updateAccountDetails=asyncHandler(async(req,res)=>{
 
   return  ApiResponse.send(res,200,user,"Account details updated successfully") 
 })
+
+export const updateAvatar=asyncHandler(async(req,res)=>{
+  let avatarLocalPath=req.file?.path;
+  if(!avatarLocalPath){
+    throw new ApiError(400,"avatar file is required");
+  }
+
+  const avatarRes=await uploadOnCloudinary(avatarLocalPath);
+
+  if(!avatarRes)
+  throw new ApiError(500,"Error while uploading avatar on server");
+
+  const oldAvatarUrl=req.user.avatar;
+  const user=await User.findByIdAndUpdate(req.user._id,{
+    avatar:avatarRes.url
+  },{new:true}).select("-password -refreshToken");
+
+  if(!user)
+  throw new ApiError(400,"user is not logged in");
+  const publicId=oldAvatarUrl.split("/").pop().split(".")[0];
+
+   deleteOnCloudinary(publicId);
+  
+return ApiResponse.send(res,200,user,"Avatar updated successfully")
+  })
+
+  export const updateCoverImage=asyncHandler(async(req,res)=>{
+    let coverLocalPath=req.file?.path;
+    if(!coverLocalPath){
+      throw new ApiError(400,"cover image is required");
+    }
+  
+    const coverRes=await uploadOnCloudinary(coverLocalPath);
+  
+    if(!coverRes)
+    throw new ApiError(500,"Error while uploading cover image on server");
+  
+    const oldCoverImageUrl=req.user.coverImage;
+    const user=await User.findByIdAndUpdate(req.user._id,{
+      coverImage:coverRes.url
+    },{new:true}).select("-password -refreshToken");
+  
+    if(!user)
+    throw new ApiError(400,"user is not logged in");
+
+    const publicId=oldCoverImageUrl?.split("/").pop().split(".")[0];
+     
+    if(publicId)
+     deleteOnCloudinary(publicId);
+    
+  return ApiResponse.send(res,200,user,"cover image updated successfully")
+    })                                                                                                                                                                                                        
