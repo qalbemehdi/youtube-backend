@@ -173,7 +173,7 @@ export const updateAvatar=asyncHandler(async(req,res)=>{
 return ApiResponse.send(res,200,user,"Avatar updated successfully")
   })
 
-  export const updateCoverImage=asyncHandler(async(req,res)=>{
+export const updateCoverImage=asyncHandler(async(req,res)=>{
     let coverLocalPath=req.file?.path;
     if(!coverLocalPath){
       throw new ApiError(400,"cover image is required");
@@ -198,4 +198,52 @@ return ApiResponse.send(res,200,user,"Avatar updated successfully")
      deleteOnCloudinary(publicId);
     
   return ApiResponse.send(res,200,user,"cover image updated successfully")
-    })                                                                                                                                                                                                        
+    })     
+
+export const getUserChannelProfile=asyncHandler(async(req,res)=>{
+  const {username}=req.params;
+   const user=await User.aggregate([
+    {
+      $match:{username}
+    },
+    {
+     $lookup:{
+      from:"subscriptions",
+      localField:"_id",
+      foreignField:"channel",
+      as:"subscribers"
+     }
+    },
+    {
+      $lookup:{
+        from:"subscriptions",
+        localField:"_id",
+        foreignField:"subscriber",
+        as:"subscribedTo"
+      }
+    },
+    {
+      $addFields:{
+        totalCountOfSubscriber:{
+          $size:"$subscribers"
+        },
+        totalCountOfSubscriptions:{
+          $size:"subscribedTo"
+        }
+      }
+    },
+    {
+      $project:{
+        _id:0,
+        username:1,
+        fullname:1,
+        avatar:1,
+        coverImage:1,
+        totalCountOfSubscriber:1,
+        totalCountOfSubscriptions:1,
+      }
+    }
+  ])
+   
+     return ApiResponse.send(res,200,user,"user channel profile fetched successfully")
+})  
