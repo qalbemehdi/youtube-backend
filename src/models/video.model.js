@@ -19,11 +19,11 @@ const videoSchema=new mongoose.Schema({
         required:true
     },
     duration:{
-        type:number,
+        type:Number,
         required:true
     },
     views:{
-        type:number,
+        type:Number,
         default:0
     },
     isPublished:{
@@ -35,7 +35,7 @@ const videoSchema=new mongoose.Schema({
         ref:'User'
     }
 
-})
+},{timestamps:true})
+videoSchema.plugin(mongooseAggregatePaginate);
 export const Video=mongoose.model("Video",videoSchema);
 
-videoSchema.plugin(mongooseAggregatePaginate);

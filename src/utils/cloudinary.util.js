@@ -26,9 +26,9 @@ cloudinary.config({
         
     }
   }
-  export const deleteOnCloudinary=async(publicId)=>{
+  export const deleteOnCloudinary=async(publicId,type='image')=>{
     try {
-      const res= await cloudinary.uploader.destroy(publicId);
+      const res= await cloudinary.uploader.destroy(publicId,{resource_type:type});
       if(!res)
        console.log("Issue in destroying the file");
     return res;
@@ -36,5 +36,9 @@ cloudinary.config({
         console.log("Error while deleting files on cloudinary");
     }
         
+  }
+
+  export const publicId=(url)=>{
+    return url.split("/").pop().split(".")[0]
   }
   export default uploadOnCloudinary;
