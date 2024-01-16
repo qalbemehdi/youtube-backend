@@ -24,3 +24,13 @@ if(!user){
  
   return ApiResponse.send(res,200,channel,channel?"Channel unsubscribed":"Channel subscribed")
 })
+
+export const getUserChannelSubscribers=asyncHandler(async(req,res)=>{
+    const{id}=req.params;
+    if(!mongoose.isValidObjectId(id)){
+        throw new Error("channel does not exists")
+    }
+    const subscribers=await Subscription.find({channel:id}).populate("subscriber","username fullname avatar")
+
+    return ApiResponse.send(res,200,subscribers,"Subscribers fetched successfully")
+})
