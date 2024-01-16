@@ -34,3 +34,13 @@ export const getUserChannelSubscribers=asyncHandler(async(req,res)=>{
 
     return ApiResponse.send(res,200,subscribers,"Subscribers fetched successfully")
 })
+
+export const getSubscribedChannels=asyncHandler(async(req,res)=>{
+    const{id}=req.params;
+    if(!mongoose.isValidObjectId(id)){
+        throw new Error("channel does not exists")
+    }
+    const subscribedChannels=await Subscription.find({subscriber:id}).populate("channel","username fullname avatar")
+
+    return ApiResponse.send(res,200,subscribedChannels,"Subscribed channels fetched successfully")
+})
