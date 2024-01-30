@@ -83,7 +83,10 @@ export const addVideoToPlaylist = asyncHandler(async (req, res) => {
   if (playlist.videos.includes(videoId)) {
     throw new ApiError(400, "Video already exists in playlist");
   }
-
+  if(!playlist.createdBy.equals(req.user?._id)){
+    throw new ApiError(400,"You do not have permission to add video from this playlist")
+  }
+  
   playlist.videos.push(videoId);
   playlist = await playlist.save({ validateBeforeSave: false });
 
@@ -141,4 +144,24 @@ export const updatePlaylist = asyncHandler(async (req, res) => {
         throw new ApiError(400,"Playlist does not exists or you do not have permission to update it")
       }
         return ApiResponse.send(res,200,playlist,"Playlist updated successfully")
+})
+
+export const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
+    const{playlistId,videoId}=req.params;
+    if (!mongoose.isValidObjectId(playlistId) || !mongoose.isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid playlist id or video id");
+      }
+      
+      let playlist=await Playlist.findById(playlistId);
+     
+      if(!playlist){
+        throw new ApiError(400,"Playlist does not exists")
+      }
+      if(!playlist.createdBy.equals(req.user?._id)){
+        throw new ApiError(400,"You do not have permission to remove video from this playlist")
+      }
+     
+     const t= playlist.videos.pull(videoId);
+     playlist= await playlist.save({validateBeforeSave:false})
+      return ApiResponse.send(res,200,playlist,"Video removed from playlist successfully")
 })
