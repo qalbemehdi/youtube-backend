@@ -17,10 +17,14 @@ const commentSchema=new mongoose.Schema({
     parent:{
       type:String
     },
+    updated:{
+      type:Boolean,
+      default:false
+    },
     children:[{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Comment"
     }]
-})
+},{timestamps:true})
 commentSchema.plugin(mongooseAggregatePaginate)
 export const Comment=mongoose.models.Comment||mongoose.model("Comment",commentSchema)
