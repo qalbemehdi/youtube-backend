@@ -6,6 +6,7 @@ import ApiError from "../utils/apiError.js";
 import { Like } from "../models/like.model.js";
 import { Comment } from "../models/comment.model.js";
 import { Tweet } from "../models/tweet.model.js";
+import { populate } from "dotenv";
 
 
 export const toggleVideoLike=asyncHandler(async(req,res)=>{
@@ -73,3 +74,18 @@ export const toggleTweetLike =asyncHandler(async(req,res)=>{
     return ApiResponse.send(res,200,like,"Tweet unliked successfully")
 })
 
+export const getLikedVideos=asyncHandler(async(req,res)=>{
+    
+    const videos=await Like.find({likedBy:req.user?._id,video:{$ne:null}}).
+    populate({
+        path:"video",
+        model:"Video",
+        select:"thumbnail title description views duration",
+        populate:{
+            path:"owner",
+            model:"User",
+            select:"username fullname avatar"
+        }
+    })
+    return ApiResponse.send(res,200,videos,"Liked videos fetched successfully")
+})
