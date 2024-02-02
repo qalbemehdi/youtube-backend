@@ -15,8 +15,13 @@ const commentSchema=new mongoose.Schema({
         ref:"User"
     },
     parent:{
-      type:String
+      type:mongoose.ObjectId,
+      ref:"Comment"
     },
+    ancestors:[{
+        type:mongoose.ObjectId,
+        ref:"Comment"
+        }],
     updated:{
       type:Boolean,
       default:false

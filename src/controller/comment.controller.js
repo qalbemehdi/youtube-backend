@@ -9,7 +9,7 @@ export const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { comment } = req.body;
 
-  if (!comment) throw new ApiError(400, "comment cannot be empty");
+  if (!comment.trim()) throw new ApiError(400, "comment cannot be empty");
   if (!mongoose.isValidObjectId(videoId))
     throw new ApiError(400, "Invalid video id:-can't comment");
   const video = await Video.findById(videoId);
@@ -36,7 +36,7 @@ export const updateComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   const { comment } = req.body;
 
-  if (!comment) throw new ApiError(400, "comment cannot be empty");
+  if (!comment.trim()) throw new ApiError(400, "comment cannot be empty");
 
   if (!mongoose.isValidObjectId(commentId))
     throw new ApiError(400, "Invalid video id:-can't update comment");
@@ -47,32 +47,30 @@ export const updateComment = asyncHandler(async (req, res) => {
     {new:true});
 
   if (!commentDocument)
-    throw new ApiError(400, "comment does not exist:can't update comment or don't have permission to update this comment");
+    throw new ApiError(400, "comment does not exist:can't update comment or do not have permission to update this comment");
 
     return ApiResponse.send(res,200,commentDocument,"comment updated successfully")
 });
 
+//Advanced way to delete multilevel nested comment system
 export const deleteComment=asyncHandler(async(req,res)=>{
     const { commentId } = req.params;
   
     if (!mongoose.isValidObjectId(commentId))
       throw new ApiError(400, "Invalid video id:-can't update comment");
   
-    const deletedComment = await Comment.findByIdAndDelete(
-      {_id:commentId},
-      {new:true});
-  
-    if (!deletedComment)
-      throw new ApiError(400, "comment does not exist:can't delete comment");
-  
-      return ApiResponse.send(res,200,deletedComment,"comment deleted successfully")
+    const deletedComment = await Comment.deleteOne({_id:commentId,author:req.user?._id});
+    if (!deletedComment.deletedCount)
+      throw new ApiError(400, "comment does not exist:can't delete comment or do not have permission to delete this comment");
+     const deletedReply=await Comment.deleteMany({ancestors:commentId})
+      return ApiResponse.send(res,200,{deletedComment,deletedReply},"comment deleted successfully")
 })
 
 export const replyComment=asyncHandler(async(req,res)=>{
     const { commentId } = req.params;
     const { comment } = req.body;
   
-    if (!comment) throw new ApiError(400, "comment cannot be empty");
+    if (!comment.trim()) throw new ApiError(400, "comment cannot be empty");
   
     if (!mongoose.isValidObjectId(commentId))
       throw new ApiError(400, "Invalid comment id:-can't reply comment");
@@ -81,12 +79,15 @@ export const replyComment=asyncHandler(async(req,res)=>{
   
     if (!commentDocument)
       throw new ApiError(400, "comment does not exist:can't reply comment");
+
+      const ancestors=[...commentDocument.ancestors,commentId]
     const replyComment=await Comment.create(
         {
             content:comment,
             parent:commentId,
             author:req.user?._id,
-            video:commentDocument.video
+            video:commentDocument.video,
+            ancestors
         })
         commentDocument.children.push(replyComment._id)
         await commentDocument.save({validateBeforeSave:false})
@@ -112,7 +113,7 @@ export const getVideoComments=asyncHandler(async(req,res)=>{
     .populate({
         path:"children",
         model:"Comment",
-        select:"content children",
+        select:"content parent children",
         populate:{
             path:"author",
             model:"User",
