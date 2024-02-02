@@ -16,7 +16,7 @@ export const addComment = asyncHandler(async (req, res) => {
   if (!video) throw new ApiError(400, "video does not exist:can't comment");
 
   const createdComment = await Comment.create({
-    content: comment,
+    content: comment.trim(),
     author: req.user?._id,
     video: videoId,
     parent: null,
@@ -43,7 +43,7 @@ export const updateComment = asyncHandler(async (req, res) => {
 
   const commentDocument = await Comment.findOneAndUpdate(
     {_id:commentId,author:req.user?._id},
-    {content:comment,updated:true},
+    {content:comment.trim(),updated:true},
     {new:true});
 
   if (!commentDocument)
@@ -57,11 +57,11 @@ export const deleteComment=asyncHandler(async(req,res)=>{
     const { commentId } = req.params;
   
     if (!mongoose.isValidObjectId(commentId))
-      throw new ApiError(400, "Invalid video id:-can't update comment");
+      throw new ApiError(400, "Invalid comment id:-can't update comment");
   
     const deletedComment = await Comment.deleteOne({_id:commentId,author:req.user?._id});
     if (!deletedComment.deletedCount)
-      throw new ApiError(400, "comment does not exist:can't delete comment or do not have permission to delete this comment");
+    throw new ApiError(404, "Comment not found or you don't have permission to delete it");
      const deletedReply=await Comment.deleteMany({ancestors:commentId})
       return ApiResponse.send(res,200,{deletedComment,deletedReply},"comment deleted successfully")
 })
